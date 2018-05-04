@@ -24,34 +24,59 @@ corpus <- VCorpus(DirSource(directory=data_path_en, encoding = "UTF-8"),
 # display structure of corpus
 # str(corpus)
 ```
+## Summary of the data set
 
 ```{r}
 # Blogs
 text <- as.character(corpus[[1]])
-format(object.size(text), units = "Mb") # size 248.5 Mb
-length(text) # has 899288 lines
+blog_file_size <- object.size(text)
+format(blog_file_size, units = "Mb") # size 248.5 Mb
+blog_num_lines <- length(text) # has 899288 lines
 text <- stri_flatten(text, collapse =" ")
 text.words <- unlist(stri_extract_words(text, locale = "en"))
-length(text.words) # 37541795 words
-length(unique(text.words)) # 395147 unique words
+blog_num_words <- length(text.words) # 37541795 words
+blog_uniq_wors <- length(unique(text.words)) # 395147 unique words
 
 # News
 text <- as.character(corpus[[2]])
-format(object.size(as.character(text)), units = "Mb") # size 196.3 Mb
-length(text) # has 1010242 lines
+news_file_size <- object.size(as.character(text))
+format(news_file_size, units = "Mb") # size 196.3 Mb
+news_num_lines <- length(text) # has 1010242 lines
 text <- stri_flatten(text, collapse =" ")
 text.words <- unlist(stri_extract_words(text, locale = "en"))
-length(text.words) # 34762303 words
-length(unique(text.words)) # 333177 unique words
+news_num_words <- length(text.words) # 34762303 words
+news_uniq_words <- length(unique(text.words)) # 333177 unique words
 
 # Tweets
 text <- as.character(corpus[[3]])
-format(object.size(as.character(text)), units = "Mb") # size 159.4 Mb
-length(text) # has 2360148 lines
+twitter_file_size <- object.size(as.character(text))
+format(twitter_file_size, units = "Mb") # size 159.4 Mb
+twitter_num_lines <- length(text) # has 2360148 lines
 text <- stri_flatten(text, collapse =" ")
 text.words <- unlist(stri_extract_words(text, locale = "en"))
-length(text.words) # 30092866 words
-length(unique(text.words)) # 486373 unique words
+twitter_num_words <- length(text.words) # 30092866 words
+twitter_uniq_words <- length(unique(text.words)) # 486373 unique words
+
+### Helper function specific to this data frame
+add_frame <- function(df, m1, m2, m3, m4, m5) {
+
+    additional <- data.frame(File_Name = m1,
+                    File_Size_MB = m2,
+                    Number_of_lines = m3,
+                    Number of Words = m4,
+                    Unique Words = m5,
+                    stringsAsFactors = FALSE
+                    )
+    df <- rbind(df, additional)
+    return(df)
+}
+
+frame <- add_frame(NULL, "Blog", blog_file_size, blog_num_lines, blog_num_words, blog_uniq_wors)
+frame <- add_frame(frame, "News", news_file_size, news_num_lines, news_num_words, news_uniq_words)
+frame <- add_frame(frame, "Twitter", twitter_file_size, twitter_num_lines, twitter_num_words, twitter_uniq_words)
+
+#Show the table output
+datatable(frame, options = list(dom = 't'))
 ```
 
 
