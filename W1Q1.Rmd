@@ -1,0 +1,61 @@
+---
+title: "Week1 Quiz1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+
+```{r}
+file.info("data/en_US/en_US.blogs.txt")$size / 1024^2
+```
+
+## Question 2
+
+```{r}
+blogs <- readLines("data/en_US/en_US.blogs.txt")
+news <- readLines("data/en_US/en_US.news.txt")
+twitter <- readLines("data/en_US/en_US.twitter.txt")
+length(twitter)
+```
+
+## Question 3
+
+```{r}
+max(nchar(blogs))
+max(nchar(news))
+max(nchar(twitter))
+```
+
+
+## Question 4
+
+```{r}
+love_count <- sum(grepl("love", twitter))
+hate_count <- sum(grepl("hate", twitter))
+love_count / hate_count
+```
+
+## Question 5
+
+```{r}
+biostats <- grep("biostats", twitter)
+twitter[biostats]
+```
+
+## Question 6
+
+```{r}
+sum(grepl("A computer once beat me at chess, but it was no match for me at kickboxing", twitter))
+```
+
+
+
+
+
+
+

@@ -1,0 +1,71 @@
+---
+title: "Exploratory Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is exploratory analysis report of the SwiftKey Dataset from Coursera Data Science Capstone project. The purpose of the project is to help people have more friendly keyboard response when they are using their mobile devices for email, social networks and other activities. The project use the dataset to predict the next cadidates wors from the keyboard typing, so that it can help people for the fast typing.
+
+## Loading the data set
+
+```{r}
+
+# load dataset using tm packages
+library(tm)
+data_path_en <- 'data/en_US'
+corpus <- VCorpus(DirSource(directory=data_path_en, encoding = "UTF-8"), 
+                           readerControl = list(language = "en"))
+
+# display structure of corpus
+# str(corpus)
+```
+
+```{r}
+# Blogs
+text <- as.character(corpus[[1]])
+format(object.size(text), units = "Mb") # size 248.5 Mb
+length(text) # has 899288 lines
+text <- stri_flatten(text, collapse =" ")
+text.words <- unlist(stri_extract_words(text, locale = "en"))
+length(text.words) # 37541795 words
+length(unique(text.words)) # 395147 unique words
+
+# News
+text <- as.character(corpus[[2]])
+format(object.size(as.character(text)), units = "Mb") # size 196.3 Mb
+length(text) # has 1010242 lines
+text <- stri_flatten(text, collapse =" ")
+text.words <- unlist(stri_extract_words(text, locale = "en"))
+length(text.words) # 34762303 words
+length(unique(text.words)) # 333177 unique words
+
+# Tweets
+text <- as.character(corpus[[3]])
+format(object.size(as.character(text)), units = "Mb") # size 159.4 Mb
+length(text) # has 2360148 lines
+text <- stri_flatten(text, collapse =" ")
+text.words <- unlist(stri_extract_words(text, locale = "en"))
+length(text.words) # 30092866 words
+length(unique(text.words)) # 486373 unique words
+```
+
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
