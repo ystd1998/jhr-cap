@@ -17,6 +17,11 @@ This is exploratory analysis report of the SwiftKey Dataset from Coursera Data S
 
 # load dataset using tm packages
 library(tm)
+library(stringi)
+library(DT)  
+library(ggplot2) 
+library(wordcloud) 
+
 data_path_en <- 'data/en_US'
 corpus <- VCorpus(DirSource(directory=data_path_en, encoding = "UTF-8"), 
                            readerControl = list(language = "en"))
@@ -30,30 +35,30 @@ corpus <- VCorpus(DirSource(directory=data_path_en, encoding = "UTF-8"),
 # Blogs
 text <- as.character(corpus[[1]])
 blog_file_size <- object.size(text)
-format(blog_file_size, units = "Mb") # size 248.5 Mb
+blog_file_size <- format(blog_file_size, units = "Mb") # size 248.5 Mb
 blog_num_lines <- length(text) # has 899288 lines
 text <- stri_flatten(text, collapse =" ")
-text.words <- unlist(stri_extract_words(text, locale = "en"))
+text.words <- unlist(stri_extract_all_words(text, locale = "en"))
 blog_num_words <- length(text.words) # 37541795 words
 blog_uniq_wors <- length(unique(text.words)) # 395147 unique words
 
 # News
 text <- as.character(corpus[[2]])
 news_file_size <- object.size(as.character(text))
-format(news_file_size, units = "Mb") # size 196.3 Mb
+news_file_size <- format(news_file_size, units = "Mb") # size 196.3 Mb
 news_num_lines <- length(text) # has 1010242 lines
 text <- stri_flatten(text, collapse =" ")
-text.words <- unlist(stri_extract_words(text, locale = "en"))
+text.words <- unlist(stri_extract_all_words(text, locale = "en"))
 news_num_words <- length(text.words) # 34762303 words
 news_uniq_words <- length(unique(text.words)) # 333177 unique words
 
 # Tweets
 text <- as.character(corpus[[3]])
 twitter_file_size <- object.size(as.character(text))
-format(twitter_file_size, units = "Mb") # size 159.4 Mb
+twitter_file_size <- format(twitter_file_size, units = "Mb") # size 159.4 Mb
 twitter_num_lines <- length(text) # has 2360148 lines
 text <- stri_flatten(text, collapse =" ")
-text.words <- unlist(stri_extract_words(text, locale = "en"))
+text.words <- unlist(stri_extract_all_words(text, locale = "en"))
 twitter_num_words <- length(text.words) # 30092866 words
 twitter_uniq_words <- length(unique(text.words)) # 486373 unique words
 
@@ -63,8 +68,8 @@ add_frame <- function(df, m1, m2, m3, m4, m5) {
     additional <- data.frame(File_Name = m1,
                     File_Size_MB = m2,
                     Number_of_lines = m3,
-                    Number of Words = m4,
-                    Unique Words = m5,
+                    Number_of_Words = m4,
+                    Unique_Words = m5,
                     stringsAsFactors = FALSE
                     )
     df <- rbind(df, additional)
@@ -75,22 +80,151 @@ frame <- add_frame(NULL, "Blog", blog_file_size, blog_num_lines, blog_num_words,
 frame <- add_frame(frame, "News", news_file_size, news_num_lines, news_num_words, news_uniq_words)
 frame <- add_frame(frame, "Twitter", twitter_file_size, twitter_num_lines, twitter_num_words, twitter_uniq_words)
 
-#Show the table output
+
+```
+
+
+## Show data set statistics
+
+```{r}
 datatable(frame, options = list(dom = 't'))
 ```
 
+## Data Sampling
 
+We can sample the data before the cleaning.
 
-```{r cars}
-summary(cars)
+```{r}
+# sample 20 % of the corpus 
+set.seed (1111) # to reproduce the results
+perc_sampling <- 0.2
+corpus[[1]]$content<-sample(corpus[[1]]$content, length(corpus[[1]]$content)*perc_sampling)
+corpus[[2]]$content<-sample(corpus[[2]]$content, length(corpus[[2]]$content)*perc_sampling)
+corpus[[3]]$content<-sample(corpus[[3]]$content, length(corpus[[3]]$content)*perc_sampling)
 ```
 
-## Including Plots
+## Data cleaning
 
-You can also embed plots, for example:
+  1. remove URLs, RTs, via, and accounts mostly from tweets.
+  2. lower all the words
+  3. remove numbers
+  4. remove punctuation
+  5. remove english stopwords and white space
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+
+# remove URLs
+toSpace <- content_transformer(function(x, pattern) gsub(pattern, " ", x))
+corpus <- tm_map(corpus, toSpace, "(f|ht)tp(s?)://(.*)[.][a-z]+")
+
+# remove RTs and vias (mostly from tweets)
+toSpace <- content_transformer(function(x, pattern) gsub(pattern, " ", x))
+corpus <- tm_map(corpus, toSpace, "RT |via ")
+
+# replace twitter accounts (@diegopozu) by space
+toSpace <- content_transformer(function(x, pattern) gsub(pattern, " ", x))
+corpus <- tm_map(corpus, toSpace, "@[^\\s]+")
+
+
+# to lower case
+corpus <- tm_map(corpus, content_transformer(tolower))
+
+# common text cleaning steps
+getTransformations()
+
+# remove stopwords
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+
+# remove numbers
+corpus <- tm_map(corpus, removeNumbers)
+
+# remove punctuation
+corpus <- tm_map(corpus, removePunctuation)
+
+# remove double whitespaces
+corpus <- tm_map(corpus, stripWhitespace)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Data converted into document term matrix
+
+```{r}
+# blogs
+blogs.dtm <- DocumentTermMatrix(VCorpus(VectorSource(corpus[[1]]$content)))
+blogs.dtms <- removeSparseTerms(blogs.dtm , 0.999)
+blogs.freq <- sort(colSums(as.matrix(blogs.dtms)), decreasing=TRUE)
+
+# news
+news.dtm <- DocumentTermMatrix(VCorpus(VectorSource(corpus[[2]]$content)))
+news.dtms <- removeSparseTerms(news.dtm, 0.999)
+news.freq <- sort(colSums(as.matrix(news.dtms)), decreasing=TRUE)
+
+# twitter
+twitter.dtm <- DocumentTermMatrix(VCorpus(VectorSource(corpus[[3]]$content)))
+twitter.dtms <- removeSparseTerms(twitter.dtm , 0.999)
+twitter.freq <- sort(colSums(as.matrix(twitter.dtms)), decreasing=TRUE)
+
+#generate a document term matrix: 
+dtm<-DocumentTermMatrix(corpus)
+```
+
+
+## Data explorary plots 
+
+After cleaning data, now we can use plots to explore document summary statistics.
+
+```{r}
+#visualization : 
+my_dtm<-as.matrix(dtm)
+order<-sort(colSums(my_dtm), decreasing=TRUE)[1:60]
+order_name <-names(order)
+word_freq<-data.frame(order)
+df<-data.frame(as.character(rownames(word_freq)), word_freq)
+colnames(df)[1]="word_names"
+names(df)<-c("word_names","frequency")
+rownames(df)<-c(1:nrow(df))
+#transformed to a frequency table for plotting easily.
+head(df)
+#order frequency as decreasing and save to a data frame called df_order
+df_order<-df[order(-df$frequency), ]
+#plot bar plot to show words and their frequency: 
+g<-ggplot(df_order,aes(x=word_names, y=frequency)) + 
+        geom_bar(stat="identity",colour="yellow", fill="pink") +
+        labs(x="frequency of each word", y="word names") +
+        ggtitle("histogram of word frequencies") +
+        coord_flip() +
+        theme_bw() +
+        geom_text(aes(label=frequency),size=3)
+         
+print(g)
+
+
+
+```
+
+
+## show blog words frequency histogram
+
+```{r}
+# blogs
+hist(blogs.freq, breaks = 1000)
+```
+
+## Use word cloud to show total word's distribution:
+
+
+```{r}
+#use word cloud.
+v<-sort(colSums(my_dtm), decreasing=TRUE)
+words<-names(v)
+d<-data.frame(word=words, freq=v)
+wordcloud(d$word,d$freq,max.words=150,colors=brewer.pal(5,"Set1"),random.order=FALSE)
+```
+
+## Explorary Summary
+
+ It seems that all 3 corporas have similar long tail word frequency distributions, and twitter has shorter words compared to news and blogs.
+ 
+ 
+
+
+
